@@ -17,7 +17,10 @@
                 <span data-translate-key="apiKeyLabel">API Key</span>
                 <span class="text-red-500" data-translate-key="apiKeyRequired">*</span>
             </label>
-            <input type="password" id="apiKey" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" data-translate-key-placeholder="apiKeyPlaceholder" placeholder="Enter your Gemini API Key">
+            <div class="relative">
+                <input type="password" id="apiKey" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pr-20" data-translate-key-placeholder="apiKeyPlaceholder" placeholder="Enter your Gemini API Key">
+                <button id="pasteApiKeyButton" data-translate-key="pasteButton" class="absolute inset-y-0 right-0 flex items-center px-4 text-sm bg-gray-200 text-gray-600 rounded-r-md hover:bg-gray-300 focus:outline-none">Paste</button>
+            </div>
             <p class="text-xs text-gray-500 mt-1" data-translate-key="apiKeyNote">The API key will be stored in browser local storage and will not be uploaded to any server.</p>
         </div>
 
@@ -33,7 +36,10 @@
 
         <div class="mb-6">
              <label for="inputText" class="block text-gray-700 text-sm font-bold mb-2" data-translate-key="inputTextLabel">Input Text</label>
-             <textarea id="inputText" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="5" data-translate-key-placeholder="inputTextPlaceholder" placeholder="Enter text here to calculate tokens"></textarea>
+             <div class="relative">
+                <textarea id="inputText" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="5" data-translate-key-placeholder="inputTextPlaceholder" placeholder="Enter text here to calculate tokens"></textarea>
+                <button id="pasteInputTextButton" data-translate-key="pasteButton" class="absolute top-2 right-2 px-3 py-1 bg-gray-200 text-gray-600 rounded-md hover:bg-gray-300 focus:outline-none text-sm">Paste</button>
+            </div>
         </div>
 
         <button id="countButton" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed" data-translate-key="countButton">
@@ -51,6 +57,8 @@
             const inputTextarea = document.getElementById('inputText');
             const countButton = document.getElementById('countButton');
             const resultDiv = document.getElementById('result');
+            const pasteApiKeyButton = document.getElementById('pasteApiKeyButton');
+            const pasteInputTextButton = document.getElementById('pasteInputTextButton');
 
             // --- Configuration ---
             const LS_KEYS = {
@@ -89,6 +97,8 @@
                     statusRequestErrorParseFail: 'Request failed',
                     statusGenericErrorPrefix: 'An error occurred during calculation: ',
                     statusParseFailDetail: 'and could not parse error details. Please check API Key, Model Name, API Version, or network connection.',
+                    pasteButton: 'Paste',
+                    pasteError: 'Failed to paste from clipboard. Please check browser permissions.',
                 },
                 'zh-CN': {
                     htmlLang: 'zh-CN',
@@ -114,6 +124,8 @@
                     statusRequestErrorParseFail: '请求失败',
                     statusGenericErrorPrefix: '计算时发生错误: ',
                     statusParseFailDetail: '且无法解析错误详情。请检查API Key、模型名称、API版本或网络连接。',
+                    pasteButton: '粘贴',
+                    pasteError: '无法从剪贴板粘贴。请检查浏览器权限。',
                 }
             };
 
@@ -257,7 +269,25 @@
                 }
             }
 
+            function createPasteHandler(targetElement) {
+                return async () => {
+                    try {
+                        if (!navigator.clipboard || !navigator.clipboard.readText) {
+                            throw new Error('Clipboard API not supported');
+                        }
+                        const text = await navigator.clipboard.readText();
+                        targetElement.value = text;
+                        targetElement.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+                    } catch (err) {
+                        console.error('Failed to read clipboard contents: ', err);
+                        alert(currentLangPack.pasteError);
+                    }
+                };
+            }
+
             // --- Event Listeners ---
+            pasteApiKeyButton.addEventListener('click', createPasteHandler(apiKeyInput));
+            pasteInputTextButton.addEventListener('click', createPasteHandler(inputTextarea));
             countButton.addEventListener('click', handleCountTokens);
 
             // --- Initialization ---
