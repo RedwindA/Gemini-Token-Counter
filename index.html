@@ -269,25 +269,23 @@
                 }
             }
 
-            function createPasteHandler(targetElement) {
-                return async () => {
-                    try {
-                        if (!navigator.clipboard || !navigator.clipboard.readText) {
-                            throw new Error('Clipboard API not supported');
-                        }
-                        const text = await navigator.clipboard.readText();
-                        targetElement.value = text;
-                        targetElement.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-                    } catch (err) {
-                        console.error('Failed to read clipboard contents: ', err);
-                        alert(currentLangPack.pasteError);
+            async function pasteFromClipboard(targetElement) {
+                try {
+                    if (!navigator.clipboard || !navigator.clipboard.readText) {
+                        throw new Error('Clipboard API not supported');
                     }
-                };
+                    const text = await navigator.clipboard.readText();
+                    targetElement.value = text;
+                    targetElement.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+                } catch (err) {
+                    console.error('Failed to read clipboard contents: ', err);
+                    alert(currentLangPack.pasteError);
+                }
             }
 
             // --- Event Listeners ---
-            pasteApiKeyButton.addEventListener('click', createPasteHandler(apiKeyInput));
-            pasteInputTextButton.addEventListener('click', createPasteHandler(inputTextarea));
+            pasteApiKeyButton.addEventListener('click', () => pasteFromClipboard(apiKeyInput));
+            pasteInputTextButton.addEventListener('click', () => pasteFromClipboard(inputTextarea));
             countButton.addEventListener('click', handleCountTokens);
 
             // --- Initialization ---
