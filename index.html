@@ -99,6 +99,7 @@
                     statusParseFailDetail: 'and could not parse error details. Please check API Key, Model Name, API Version, or network connection.',
                     pasteButton: 'Paste',
                     pasteError: 'Failed to paste from clipboard. Please check browser permissions.',
+                    pasteFirefoxHint: 'For security reasons, Firefox requires you to use the keyboard shortcut (Ctrl+V or Cmd+V) to paste.',
                 },
                 'zh-CN': {
                     htmlLang: 'zh-CN',
@@ -126,6 +127,7 @@
                     statusParseFailDetail: '且无法解析错误详情。请检查API Key、模型名称、API版本或网络连接。',
                     pasteButton: '粘贴',
                     pasteError: '无法从剪贴板粘贴。请检查浏览器权限。',
+                    pasteFirefoxHint: '出于安全原因，Firefox 要求您使用键盘快捷键 (Ctrl+V 或 Cmd+V) 进行粘贴。',
                 }
             };
 
@@ -269,25 +271,29 @@
                 }
             }
 
-            function createPasteHandler(targetElement) {
-                return async () => {
-                    try {
-                        if (!navigator.clipboard || !navigator.clipboard.readText) {
-                            throw new Error('Clipboard API not supported');
-                        }
-                        const text = await navigator.clipboard.readText();
-                        targetElement.value = text;
-                        targetElement.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-                    } catch (err) {
-                        console.error('Failed to read clipboard contents: ', err);
-                        alert(currentLangPack.pasteError);
+            async function pasteFromClipboard(targetElement) {
+                // Firefox compatibility: Check user agent as Firefox has strict clipboard permissions
+                if (navigator.userAgent.includes("Firefox/")) {
+                    alert(currentLangPack.pasteFirefoxHint);
+                    targetElement.focus(); // Focus the element to encourage manual pasting
+                    return;
+                }
+                try {
+                    if (!navigator.clipboard || !navigator.clipboard.readText) {
+                        throw new Error('Clipboard API not supported');
                     }
-                };
+                    const text = await navigator.clipboard.readText();
+                    targetElement.value = text;
+                    targetElement.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+                } catch (err) {
+                    console.error('Failed to read clipboard contents: ', err);
+                    alert(currentLangPack.pasteError);
+                }
             }
 
             // --- Event Listeners ---
-            pasteApiKeyButton.addEventListener('click', createPasteHandler(apiKeyInput));
-            pasteInputTextButton.addEventListener('click', createPasteHandler(inputTextarea));
+            pasteApiKeyButton.addEventListener('click', () => pasteFromClipboard(apiKeyInput));
+            pasteInputTextButton.addEventListener('click', () => pasteFromClipboard(inputTextarea));
             countButton.addEventListener('click', handleCountTokens);
 
             // --- Initialization ---
